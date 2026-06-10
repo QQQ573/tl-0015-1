@@ -1,6 +1,20 @@
-import type { Fortune, Zodiac, GameEvent, Ending, MapNode, EndingType, EventChoice } from './types';
+import type { Fortune, Zodiac, GameEvent, Ending, MapNode, EndingType, EventType } from './types';
 import { ZODIACS, EVENTS, ENDING_TEXTS, INITIAL_FORTUNE, NODE_COUNT, FORTUNE_KEYS } from './constants';
 import { SeededRandom } from './SeededRandom';
+
+const RARITY_WEIGHTS: Record<string, number> = {
+  common: 60,
+  uncommon: 30,
+  rare: 10,
+};
+
+const TYPE_TARGET: Record<EventType, number> = {
+  redPacket: 2,
+  quarrel: 2,
+  noble: 2,
+  loseMoney: 2,
+  neutral: 4,
+};
 
 export class GameEngine {
   private rng: SeededRandom;
@@ -19,7 +33,7 @@ export class GameEngine {
     }
 
     this.zodiac = zodiac;
-    this.rng = new SeededRandom(seed);
+    this.rng = new SeededRandom(`temple-fair:${seed}:${zodiacId}`);
     this.fortune = this.calculateInitialFortune();
     this.currentNodeIndex = -1;
     this.nodes = this.generateNodes();
@@ -39,24 +53,142 @@ export class GameEngine {
   }
 
   private generateNodes(): MapNode[] {
-    const eventTypes = ['redPacket', 'quarrel', 'noble', 'loseMoney', 'neutral', 'neutral'] as const;
     const nodes: MapNode[] = [];
+    const availableEvents = this.getFilteredEvents();
 
-    const shuffledTypes = this.rng.shuffle([...eventTypes, ...eventTypes]);
+    if (availableEvents.length < NODE_COUNT) {
+      console.warn(
+        `可用事件数(${availableEvents.length})少于节点数(${NODE_COUNT})，可能会有重复`
+      );
+    }
 
-    for (let i = 0; i < NODE_COUNT; i++) {
-      const type = shuffledTypes[i];
-      const eventsOfType = EVENTS.filter((e) => e.type === type);
-      const event = this.rng.pick(eventsOfType);
+    const selectedEvents = this.selectUniqueEvents(availableEvents, NODE_COUNT);
 
+    const shuffledEvents = this.rng.shuffle(selectedEvents);
+
+    for (let i = 0; i < NODE_COUNT && i < shuffledEvents.length; i++) {
       nodes.push({
         index: i,
-        eventId: event.id,
+        eventId: shuffledEvents[i].id,
         visited: false,
       });
     }
 
     return nodes;
+  }
+
+  private getFilteredEvents(): GameEvent[] {
+    const zodiacEvents: GameEvent[] = [];
+    const commonEvents: GameEvent[] = [];
+
+    for (const event of EVENTS) {
+      if (event.zodiacExclusive && event.zodiacExclusive.length > 0) {
+        if (event.zodiacExclusive.includes(this.zodiac.id)) {
+          zodiacEvents.push(event);
+        }
+      } else {
+        commonEvents.push(event);
+      }
+    }
+
+    return [...zodiacEvents, ...commonEvents];
+  }
+
+  private selectUniqueEvents(pool: GameEvent[], count: number): GameEvent[] {
+    const selected: GameEvent[] = [];
+    const usedIds = new Set<string>();
+
+    const zodiacSpecial = pool.filter((e) => e.zodiacExclusive?.includes(this.zodiac.id));
+    const hasSpecialInFirstHalf = zodiacSpecial.length > 0 && this.rng.next() < 0.85;
+
+    if (hasSpecialInFirstHalf) {
+      const special = this.pickWeighted(zodiacSpecial);
+      selected.push(special);
+      usedIds.add(special.id);
+    }
+
+    const typeCounts: Record<string, number> = {};
+    for (const type of Object.keys(TYPE_TARGET)) {
+      typeCounts[type] = 0;
+    }
+
+    for (const event of selected) {
+      typeCounts[event.type]++;
+    }
+
+    const remainingCount = count - selected.length;
+    const remainingPool = pool.filter((e) => !usedIds.has(e.id));
+
+    for (let i = 0; i < remainingCount && remainingPool.length > 0; i++) {
+      const underrepresentedTypes = Object.entries(typeCounts)
+        .filter(([type, num]) => {
+          const target = TYPE_TARGET[type as EventType] ?? 2;
+          return num < target;
+        })
+        .map(([type]) => type);
+
+      let candidates: GameEvent[];
+
+      if (underrepresentedTypes.length > 0) {
+        candidates = remainingPool.filter(
+          (e) => underrepresentedTypes.includes(e.type) && !usedIds.has(e.id)
+        );
+      }
+
+      if (!candidates || candidates.length === 0) {
+        candidates = remainingPool.filter((e) => !usedIds.has(e.id));
+      }
+
+      if (candidates.length === 0) {
+        break;
+      }
+
+      const chosen = this.pickWeighted(candidates);
+      selected.push(chosen);
+      usedIds.add(chosen.id);
+      typeCounts[chosen.type] = (typeCounts[chosen.type] || 0) + 1;
+
+      const idx = remainingPool.findIndex((e) => e.id === chosen.id);
+      if (idx > -1) {
+        remainingPool.splice(idx, 1);
+      }
+    }
+
+    if (selected.length < count) {
+      const backup = pool.filter((e) => !usedIds.has(e.id));
+      const shuffledBackup = this.rng.shuffle(backup);
+      for (const event of shuffledBackup) {
+        if (selected.length >= count) break;
+        selected.push(event);
+        usedIds.add(event.id);
+      }
+    }
+
+    return selected.slice(0, count);
+  }
+
+  private pickWeighted(events: GameEvent[]): GameEvent {
+    if (events.length === 0) {
+      throw new Error('Cannot pick from empty array');
+    }
+
+    const totalWeight = events.reduce((sum, event) => {
+      const rarity = event.rarity || 'common';
+      return sum + (RARITY_WEIGHTS[rarity] ?? 50);
+    }, 0);
+
+    let random = this.rng.next() * totalWeight;
+
+    for (const event of events) {
+      const rarity = event.rarity || 'common';
+      const weight = RARITY_WEIGHTS[rarity] ?? 50;
+      random -= weight;
+      if (random <= 0) {
+        return event;
+      }
+    }
+
+    return events[events.length - 1];
   }
 
   getFortune(): Fortune {

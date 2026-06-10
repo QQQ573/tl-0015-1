@@ -29,6 +29,13 @@ export interface GameEvent {
   title: string;
   description: string;
   choices: EventChoice[];
+  zodiacExclusive?: string[];
+  rarity?: 'common' | 'uncommon' | 'rare';
+}
+
+export interface EventVariant {
+  descriptionSnippets: string[];
+  resultSnippets: Record<string, string[]>;
 }
 
 export type EndingType =
