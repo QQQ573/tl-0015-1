@@ -6,6 +6,8 @@ const DEFAULT_RECORDS: GameRecords = {
   bestEnding: null,
   endingCounts: {},
   zodiacCounts: {},
+  totalItemsPurchased: 0,
+  highestSessionSpent: 0,
 };
 
 export function loadRecords(): GameRecords {
@@ -32,7 +34,9 @@ export function recordGameEnd(
   endingType: EndingType,
   fortune: Fortune,
   seed: string,
-  zodiacId: string
+  zodiacId: string,
+  itemsPurchased: number = 0,
+  sessionSpent: number = 0
 ): GameRecords {
   const records = loadRecords();
 
@@ -41,6 +45,12 @@ export function recordGameEnd(
   records.endingCounts[endingType] = (records.endingCounts[endingType] || 0) + 1;
 
   records.zodiacCounts[zodiacId] = (records.zodiacCounts[zodiacId] || 0) + 1;
+
+  records.totalItemsPurchased = (records.totalItemsPurchased || 0) + itemsPurchased;
+
+  if (sessionSpent > (records.highestSessionSpent || 0)) {
+    records.highestSessionSpent = sessionSpent;
+  }
 
   const endingScore = calculateEndingScore(endingType, fortune);
   const currentBestScore = records.bestEnding

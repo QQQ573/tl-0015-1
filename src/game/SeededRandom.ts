@@ -1,8 +1,14 @@
 export class SeededRandom {
   private state: number;
+  private seed: string;
 
   constructor(seed: string) {
+    this.seed = seed;
     this.state = this.hashSeed(seed);
+  }
+
+  getSeed(): string {
+    return this.seed;
   }
 
   private hashSeed(seed: string): number {

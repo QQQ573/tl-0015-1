@@ -3,9 +3,10 @@ import { useGameStore } from '../store/useGameStore';
 import { GameMap } from '../components/GameMap';
 import { FortunePanel } from '../components/FortunePanel';
 import { EventModal } from '../components/EventModal';
+import { ShopModal } from '../components/ShopModal';
 import { EndingScreen } from '../components/EndingScreen';
 import { Home, RotateCcw } from 'lucide-react';
-import { NODE_COUNT } from '../game/constants';
+import { NODE_COUNT, ITEMS } from '../game/constants';
 
 export function GamePage() {
   const navigate = useNavigate();
@@ -16,14 +17,19 @@ export function GamePage() {
     fortune,
     nodes,
     currentEvent,
+    currentShop,
     eventResult,
     ending,
     steps,
     records,
+    inventory,
     moveForward,
     makeChoice,
     closeEventResult,
     resetGame,
+    useItem,
+    buyItem,
+    leaveShop,
   } = useGameStore();
 
   const handleBack = () => {
@@ -36,7 +42,7 @@ export function GamePage() {
     navigate('/');
   };
 
-  const canMove = !currentEvent && !ending && currentNode < NODE_COUNT - 1;
+  const canMove = !currentEvent && !currentShop && !ending && currentNode < NODE_COUNT - 1;
 
   if (!zodiac) {
     return (
@@ -121,7 +127,8 @@ export function GamePage() {
 
         <div className="mt-4 text-center text-white/60 text-xs">
           <p>💡 提示：点击「往前走」触发事件，选择不同应对改变运势</p>
-          <p>任一运势归零或满值即触发结局，也可能平安走完 12 站</p>
+          <p>🏮 红色节点是庙会摊铺，可以用财运购买道具</p>
+          <p>🎒 事件抉择前可以使用行囊中的道具增强效果</p>
         </div>
       </div>
 
@@ -131,6 +138,19 @@ export function GamePage() {
           onChoice={makeChoice}
           resultText={eventResult?.resultText || null}
           onClose={closeEventResult}
+          inventory={inventory}
+          onUseItem={useItem}
+          droppedItem={(eventResult as any)?.droppedItem || null}
+        />
+      )}
+
+      {currentShop && (
+        <ShopModal
+          shop={currentShop}
+          items={ITEMS}
+          currentWealth={fortune.wealth}
+          onBuy={buyItem}
+          onClose={leaveShop}
         />
       )}
 

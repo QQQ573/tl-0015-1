@@ -56,13 +56,66 @@ export interface Ending {
   fortune: Fortune;
 }
 
-export interface MapNode {
-  index: number;
-  eventId: string;
+export type ItemEffectType = 'amulet' | 'candied_haw' | 'couplet' | 'blessing' | 'firecracker' | 'sachet' | 'fan' | 'gourd';
+
+export type ItemUseTiming = 'before_choice' | 'after_choice' | 'any' | 'shop_only';
+
+export interface Item {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  effectType: ItemEffectType;
+  effectValue?: number;
+  targetFortune?: FortuneKey;
+  maxStack: number;
+  useTiming: ItemUseTiming;
+  basePrice: number;
+  priceVariance: number;
+}
+
+export interface InventoryItem {
+  itemId: string;
+  quantity: number;
+}
+
+export interface ShopItem {
+  itemId: string;
+  price: number;
+  stock: number;
+  maxStock: number;
+}
+
+export interface Shop {
+  nodeIndex: number;
+  items: ShopItem[];
   visited: boolean;
 }
 
-export type GamePhase = 'select' | 'playing' | 'event' | 'ending';
+export type NodeType = 'event' | 'shop';
+
+export interface MapNode {
+  index: number;
+  type: NodeType;
+  eventId?: string;
+  shopId?: string;
+  visited: boolean;
+}
+
+export type GamePhase = 'select' | 'playing' | 'event' | 'shop' | 'ending';
+
+export interface ActiveItemEffect {
+  effectType: ItemEffectType;
+  targetFortune?: FortuneKey;
+  effectValue?: number;
+  used: boolean;
+}
+
+export interface EventResult {
+  choiceIndex: number;
+  resultText: string;
+  droppedItem?: string | null;
+}
 
 export interface GameState {
   phase: GamePhase;
@@ -72,9 +125,14 @@ export interface GameState {
   fortune: Fortune;
   nodes: MapNode[];
   currentEvent: GameEvent | null;
-  eventResult: { choiceIndex: number; resultText: string } | null;
+  currentShop: Shop | null;
+  eventResult: EventResult | null;
   ending: Ending | null;
   steps: number;
+  inventory: InventoryItem[];
+  activeEffects: ActiveItemEffect[];
+  shops: Shop[];
+  sessionSpent: number;
 }
 
 export interface GameRecords {
@@ -87,4 +145,6 @@ export interface GameRecords {
   } | null;
   endingCounts: Record<string, number>;
   zodiacCounts: Record<string, number>;
+  totalItemsPurchased: number;
+  highestSessionSpent: number;
 }

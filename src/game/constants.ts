@@ -1,4 +1,4 @@
-import type { Zodiac, GameEvent, EndingType } from './types';
+import type { Zodiac, GameEvent, EndingType, Item } from './types';
 
 export const ZODIACS: Zodiac[] = [
   { id: 'rat', name: '鼠', emoji: '🐭', description: '机灵聪慧，财运亨通', bonus: { wealth: 10 } },
@@ -810,6 +810,13 @@ export const FORTUNE_LABELS: Record<string, string> = {
   career: '业',
 };
 
+export const FORTUNE_LABELS_FULL: Record<string, string> = {
+  wealth: '财运',
+  love: '感情',
+  health: '健康',
+  career: '事业',
+};
+
 export const FORTUNE_COLORS: Record<string, string> = {
   wealth: '#D4AF37',
   love: '#E91E63',
@@ -827,3 +834,107 @@ export const INITIAL_FORTUNE = {
 export const NODE_COUNT = 12;
 
 export const STORAGE_KEY = 'temple_fair_records';
+
+export const INVENTORY_SIZE = 4;
+
+export const SHOP_COUNT = 2;
+
+export const ITEMS: Item[] = [
+  {
+    id: 'amulet',
+    name: '护身符',
+    emoji: '🧿',
+    description: '驱邪避凶，本次选项负面效果减半（向下取整）',
+    effectType: 'amulet',
+    maxStack: 3,
+    useTiming: 'before_choice',
+    basePrice: 15,
+    priceVariance: 5,
+  },
+  {
+    id: 'candied_haw',
+    name: '糖葫芦',
+    emoji: '🍡',
+    description: '酸甜可口，本次选项正面效果 +3',
+    effectType: 'candied_haw',
+    effectValue: 3,
+    maxStack: 5,
+    useTiming: 'before_choice',
+    basePrice: 10,
+    priceVariance: 3,
+  },
+  {
+    id: 'couplet',
+    name: '春联',
+    emoji: '📜',
+    description: '新年祝福，本次运势变动锁定不低于 0',
+    effectType: 'couplet',
+    maxStack: 2,
+    useTiming: 'before_choice',
+    basePrice: 20,
+    priceVariance: 6,
+  },
+  {
+    id: 'blessing',
+    name: '福袋',
+    emoji: '🎁',
+    description: '神秘礼包，随机提升一维运势 5~10 点',
+    effectType: 'blessing',
+    effectValue: 10,
+    maxStack: 2,
+    useTiming: 'any',
+    basePrice: 25,
+    priceVariance: 8,
+  },
+  {
+    id: 'firecracker',
+    name: '鞭炮',
+    emoji: '🧨',
+    description: '驱走霉运，本次负面效果直接归零',
+    effectType: 'firecracker',
+    maxStack: 2,
+    useTiming: 'before_choice',
+    basePrice: 30,
+    priceVariance: 10,
+  },
+  {
+    id: 'sachet',
+    name: '香囊',
+    emoji: '🌸',
+    description: '香气怡人，指定运势维度本次增加 8 点',
+    effectType: 'sachet',
+    effectValue: 8,
+    maxStack: 3,
+    useTiming: 'any',
+    basePrice: 18,
+    priceVariance: 5,
+  },
+  {
+    id: 'fan',
+    name: '折扇',
+    emoji: '🪭',
+    description: '清风徐来，本次所有效果绝对值 +2',
+    effectType: 'fan',
+    effectValue: 2,
+    maxStack: 2,
+    useTiming: 'before_choice',
+    basePrice: 22,
+    priceVariance: 7,
+  },
+  {
+    id: 'gourd',
+    name: '葫芦',
+    emoji: '🫙',
+    description: '福禄双全，恢复所有运势维度各 5 点',
+    effectType: 'gourd',
+    effectValue: 5,
+    maxStack: 2,
+    useTiming: 'any',
+    basePrice: 35,
+    priceVariance: 10,
+  },
+];
+
+export const SHOP_NAME_EMOJI = '🏮';
+export const SHOP_NODE_COLOR = '#FF6B6B';
+

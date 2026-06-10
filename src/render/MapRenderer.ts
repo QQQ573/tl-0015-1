@@ -1,5 +1,5 @@
 import type { MapNode, EventType } from '../game/types';
-import { NODE_COUNT } from '../game/constants';
+import { NODE_COUNT, SHOP_NODE_COLOR, SHOP_NAME_EMOJI } from '../game/constants';
 
 interface MapRendererOptions {
   canvas: HTMLCanvasElement;
@@ -148,9 +148,19 @@ export class MapRenderer {
       const node = this.nodes[i];
       const isCurrent = i === this.currentNodeIndex;
       const isVisited = node?.visited;
+      const isShop = node?.type === 'shop';
 
-      const eventType = node?.eventId ? this.getEventTypeFromEventId(node.eventId) : 'neutral';
-      const color = EVENT_TYPE_COLORS[eventType] || '#ccc';
+      let color: string;
+      let displayText: string;
+
+      if (isShop) {
+        color = SHOP_NODE_COLOR;
+        displayText = SHOP_NAME_EMOJI;
+      } else {
+        const eventType = node?.eventId ? this.getEventTypeFromEventId(node.eventId) : 'neutral';
+        color = EVENT_TYPE_COLORS[eventType] || '#ccc';
+        displayText = `${i + 1}`;
+      }
 
       ctx.save();
 
@@ -181,10 +191,14 @@ export class MapRenderer {
       ctx.stroke();
 
       ctx.fillStyle = '#FFF8E7';
-      ctx.font = 'bold 14px serif';
+      if (isShop) {
+        ctx.font = '20px serif';
+      } else {
+        ctx.font = 'bold 14px serif';
+      }
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`${i + 1}`, pos.x, pos.y);
+      ctx.fillText(displayText, pos.x, pos.y);
 
       ctx.restore();
     }
